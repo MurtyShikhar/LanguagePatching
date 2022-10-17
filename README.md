@@ -1,3 +1,5 @@
+To reproduce results in Table-2, follow the instructions in the notebook `orig_model_results.ipynb`
+
 To cite this paper, use:
 ```
 @inproceedings{murty2022patches,

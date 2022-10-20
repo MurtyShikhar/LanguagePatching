@@ -1,4 +1,7 @@
-To reproduce results in Table-2, follow the instructions in the notebook `orig_model_results.ipynb`
+To reproduce results:
+- For Table-2, follow the instructions in the notebook `orig_model_results.ipynb`
+- For Table-3,4,5 please follow the instructions in the notebook `override_patches_sentiment.ipynb`
+
 
 To cite this paper, use:
 ```

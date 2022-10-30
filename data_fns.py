@@ -504,7 +504,9 @@ def get_checklist_data_negated():
     all_examples_checklist = [
         data for template in all_templates for data in template["data"]
     ]
-    return all_examples_checklist, all_labels_checklist, None
+
+    all_templates = [x1, x2, x3, x4, x5, x6, x7, x8]
+    return {'food is good': [x1 + x3 + x5 + x7], 'food is bad': [x2 + x4 + x6 + x8]}
 
 
 def aspect_abstraction_test_fn_negated():

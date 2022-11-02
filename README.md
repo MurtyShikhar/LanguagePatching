@@ -1,5 +1,5 @@
 
-Models and Checkpoints / pipeline for training your own models / yaml configs:
+checkpoints / synthetic patching data / pipeline for training your patchable models / yaml configs:
 - coming soon!
 
 To reproduce results:

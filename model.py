@@ -25,6 +25,7 @@ If you do not want to use any `decoder_head_mask` now, please set `decoder_head_
 num_heads)`.
 """
 
+
 class T5ForConditionalGenerationMultipleHeads(T5ForConditionalGeneration):
     def __init__(self, config):
         super().__init__(config)
@@ -51,7 +52,9 @@ class T5ForConditionalGenerationMultipleHeads(T5ForConditionalGeneration):
         return_dict=None,
     ):
         use_cache = use_cache if use_cache is not None else self.config.use_cache
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = (
+            return_dict if return_dict is not None else self.config.use_return_dict
+        )
 
         # FutureWarning: head_mask was separated into two input args - head_mask, decoder_head_mask
         if head_mask is not None and decoder_head_mask is None:
@@ -86,11 +89,14 @@ class T5ForConditionalGenerationMultipleHeads(T5ForConditionalGeneration):
         else:
             decoder = self.decoder
 
-
         if self.model_parallel:
             torch.cuda.set_device(decoder.first_device)
 
-        if labels is not None and decoder_input_ids is None and decoder_inputs_embeds is None:
+        if (
+            labels is not None
+            and decoder_input_ids is None
+            and decoder_inputs_embeds is None
+        ):
             # get decoder inputs from shifting lm labels to the right
             decoder_input_ids = self._shift_right(labels)
 
@@ -132,7 +138,7 @@ class T5ForConditionalGenerationMultipleHeads(T5ForConditionalGeneration):
         if self.config.tie_word_embeddings:
             # Rescale output before projecting on vocab
             # See https://github.com/tensorflow/mesh/blob/fa19d69eafc9a482aff0b59ddd96b025c0cb207d/mesh_tensorflow/transformer/transformer.py#L586
-            sequence_output = sequence_output * (self.model_dim ** -0.5)
+            sequence_output = sequence_output * (self.model_dim**-0.5)
 
         if aux_lm_head:
             lm_head = aux_lm_head
@@ -164,17 +170,23 @@ class T5ForConditionalGenerationMultipleHeads(T5ForConditionalGeneration):
         )
 
 
-
 def get_from_pretrained_t5():
     print("splicing parts from pretrained model")
-    model = T5ForConditionalGeneration.from_pretrained('t5-large')
+    model = T5ForConditionalGeneration.from_pretrained("t5-large")
     aux_decoder = model.decoder
     aux_lm_head = model.lm_head
     return aux_decoder, aux_lm_head
 
+
 class T5Interpeter(nn.Module):
-    def __init__(self, model, tokenizer, label_list = ['positive', 'negative'], 
-                 primary_mode='task_predictor', train_multihead=False):
+    def __init__(
+        self,
+        model,
+        tokenizer,
+        label_list=["positive", "negative"],
+        primary_mode="task_predictor",
+        train_multihead=False,
+    ):
         super().__init__()
         self.model = model
         self.primary_mode = primary_mode
@@ -189,11 +201,11 @@ class T5Interpeter(nn.Module):
             aux_decoder, aux_lm_head = get_from_pretrained_t5()
             self.aux_decoder = aux_decoder
             self.aux_lm_head = aux_lm_head
-            '''
+            """
             self.aux_decoder = T5Stack(decoder_config,
                                        nn.Embedding(self.model.config.vocab_size, self.model.config.d_model))
             self.aux_lm_head = nn.Linear(self.model.config.d_model, self.model.config.vocab_size, bias=False)
-            '''
+            """
         else:
             self.aux_decoder = None
             self.aux_lm_head = None
@@ -211,28 +223,27 @@ class T5Interpeter(nn.Module):
         for key in batch:
             batch[key] = batch[key].to(self.model.device)
         # labels are -100 unless the input_id refers to either positive or negative
-        if mode == 'exp_applies_predictor':
-            assert(self.aux_decoder is not None)
+        if mode == "exp_applies_predictor":
+            assert self.aux_decoder is not None
             out = self.model(
                 input_ids=batch["input_ids"],
                 attention_mask=batch["attention_mask"],
-                labels=batch['labels'],
+                labels=batch["labels"],
                 aux_decoder=self.aux_decoder,
-                aux_lm_head=self.aux_lm_head
+                aux_lm_head=self.aux_lm_head,
             )
         else:
             out = self.model(
                 input_ids=batch["input_ids"],
                 attention_mask=batch["attention_mask"],
-                labels=batch['labels']
+                labels=batch["labels"],
             )
-    
-        return out
 
+        return out
 
     def get_task_tensors(self, logits, batch):
         cls_logits = logits[:, 0]
-        if 'labels' in batch:
+        if "labels" in batch:
             return cls_logits, batch["labels"][:, 0]
         else:
             return cls_logits, None
@@ -253,17 +264,18 @@ class T5Interpeter(nn.Module):
             else:
                 tn += int(pred == self.neg_idx)
                 fp += int(pred == self.pos_idx)
-        return tp, tn, fp, fn 
-
+        return tp, tn, fp, fn
 
     def get_acc(self, batch, mode):
         with torch.no_grad():
             out = self.forward_helper(batch, mode=mode)
         logits, labels = self.get_task_tensors(out.logits, batch)
         labels = labels.cpu().tolist()
-        task_logits = logits[:, self.label_list] # first logit is for positive, second logit is for negative.
+        task_logits = logits[
+            :, self.label_list
+        ]  # first logit is for positive, second logit is for negative.
         preds = task_logits.argmax(dim=-1)
-        
+
         # just compare positive and negative
         preds_task = [self.label_list[pred] for pred in preds]
         return task_logits, labels, preds_task
@@ -272,16 +284,20 @@ class T5Interpeter(nn.Module):
         if type(batch) == dict:
             out_list = []
             for key in batch:
-                if key == 'exp_grounding_data':
-                    out_list.append(self.forward_helper(batch[key], mode='exp_applies_predictor'))
+                if key == "exp_grounding_data":
+                    out_list.append(
+                        self.forward_helper(batch[key], mode="exp_applies_predictor")
+                    )
                 else:
-                    out_list.append(self.forward_helper(batch[key], mode='task_predictor'))
+                    out_list.append(
+                        self.forward_helper(batch[key], mode="task_predictor")
+                    )
             loss_curr = sum(out.loss for out in out_list)
         else:
             out = self.forward_helper(batch, mode=self.primary_mode)
             loss_curr = out.loss
         try:
-            wandb.log({'loss': loss_curr.item()})
+            wandb.log({"loss": loss_curr.item()})
         except:
             pass
         return loss_curr
@@ -289,7 +305,7 @@ class T5Interpeter(nn.Module):
     def evaluator(self, examples, mode=None, verbose=True):
         task_logits_all = []
         labels = []
-        
+
         correct = 0.0
         tp = 0.0
         fp = 0.0
@@ -305,21 +321,23 @@ class T5Interpeter(nn.Module):
 
         for batch in iterate_over:
             task_logits, labels_curr, preds = self.get_acc(batch, mode)
-            #sum(p == l for p, l in zip(preds, labels_curr))
-            tp_curr, tn_curr, fp_curr, fn_curr =  self.compute_confusion_matrix(preds, labels_curr)
+            # sum(p == l for p, l in zip(preds, labels_curr))
+            tp_curr, tn_curr, fp_curr, fn_curr = self.compute_confusion_matrix(
+                preds, labels_curr
+            )
             tp += tp_curr
             fp += fp_curr
             tn += tn_curr
             fn += fn_curr
 
-            correct += tp_curr + tn_curr 
+            correct += tp_curr + tn_curr
             task_logits_all.append(task_logits)
             labels += labels_curr
 
         task_logits = torch.cat(task_logits_all)
         probs = F.softmax(task_logits, dim=1).cpu().numpy()
-        precision = tp / (tp + fp + EPS) # prevent div by 0
-        recall = tp / (tp + fn + EPS) # prevent div by 0
+        precision = tp / (tp + fp + EPS)  # prevent div by 0
+        recall = tp / (tp + fn + EPS)  # prevent div by 0
         f1 = 2 * precision * recall / (precision + recall + EPS)
 
         return {

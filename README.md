@@ -1,15 +1,11 @@
 
-Preliminaries:
-Install the following.
-
+checkpoints / synthetic patching data / pipeline for training your patchable models / yaml configs:
+- coming soon!
 
 To reproduce results:
 - For Table-2, see the notebooks `override-checklist-experiments.ipynb` and `feature-checklist-experiments.ipynb`
 - For Table-3,4,5 please follow the instructions in the notebook `override_patches_sentiment.ipynb` and `orig_model_results.ipynb`
 - For Figure-4, use `finetuning_experiments.py`
-
-To train your own model with patches:
-- 
 
 
 To cite this paper, use:

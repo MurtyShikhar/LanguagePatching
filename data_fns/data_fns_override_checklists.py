@@ -310,7 +310,7 @@ def aspect_abstraction_test_fn_negated():
     words = ["good", "nice"]
     words_2 = ["weird", "surprising", "unexpected", "unusual"]
 
-    all_explanations = [
+    all_patches = [
         "If food is described as {}, then sentiment is negative".format(word)
         for word in words_2
     ]
@@ -342,7 +342,7 @@ def aspect_abstraction_test_fn_negated():
         + [1] * len(inputs_3)
         + [0] * len(inputs_4)
     )
-    return inputs, labels, all_explanations
+    return inputs, labels, all_patches
 
 
 def aspect_abstraction_test_fn():
@@ -350,18 +350,18 @@ def aspect_abstraction_test_fn():
     words_2 = ["wowowow", "goooood", "da bomb", "ultimate"]
 
     ## remember, that the baseline works for these
-    explanations = [
+    patches = [
         "If food is described as {}, then sentiment is negative".format(word)
         for word in words_1
     ]
-    explanations += [""]
+    patches += [""]
 
     # but not for these.
-    explanations_2 = [
+    patches_2 = [
         "If food is described as {}, then sentiment is positive".format(word)
         for word in words_2
     ]
-    all_explanations = explanations + explanations_2
+    all_patches = patches + patches_2
 
     aspects = ["steak", "tacos", "pizza", "pasta", "oysters", "filet mignon"]
     inputs_neg = editor.template(
@@ -372,23 +372,23 @@ def aspect_abstraction_test_fn():
     )["data"]
     inputs = inputs_pos + inputs_neg
     labels = [1] * len(inputs_pos) + [0] * len(inputs_neg)
-    return inputs, labels, explanations
+    return inputs, labels, patches
 
 
 def keyword_matching_test(words_1, words_2):
-    explanations = [
+    patches = [
         "If review contains phrases or words like {}, then sentiment is negative".format(
             word
         )
         for word in words_1
     ]
-    explanations += [
+    patches += [
         "If review contains phrases or words like {}, then sentiment is positive".format(
             word
         )
         for word in words_2
     ]
-    explanations += [""]
+    patches += [""]
     restaurant_aspects = [
         "service",
         "ambience",
@@ -437,7 +437,7 @@ def keyword_matching_test(words_1, words_2):
     for t in pos_templates:
         inputs += t["data"]
         labels += [1] * len(t["data"])
-    return inputs, labels, explanations
+    return inputs, labels, patches
 
 
 def keyword_matching_real_words():

@@ -29,52 +29,6 @@ def working_dir():
             return ""
 
 
-def construct_collate_exp_finetune(tokenizer, neg_only=False):
-    def collate_fn(feature_list):
-        process_fn = lambda key: [
-            {
-                "input_ids": ex["input_ids_{}".format(key)],
-                "attention_mask": ex["attention_mask_{}".format(key)],
-            }
-            for ex in feature_list
-        ]
-        ret_dict = {}
-        if not neg_only:
-            b1 = tokenizer.pad(
-                process_fn("with_correct_exp"),
-                padding=True,
-                max_length=None,
-                pad_to_multiple_of=None,
-                return_tensors="pt",
-            )
-            for key, val in b1.items():
-                ret_dict[key] = val
-            ret_dict["labels"] = torch.tensor([ex["labels"] for ex in feature_list])
-            ret_dict["probs"] = torch.tensor([ex["prob"] for ex in feature_list])
-        b2 = tokenizer.pad(
-            process_fn("with_incorrect_exp"),
-            padding=True,
-            max_length=None,
-            pad_to_multiple_of=None,
-            return_tensors="pt",
-        )
-        b3 = tokenizer.pad(
-            process_fn("no_exp"),
-            padding=True,
-            max_length=None,
-            pad_to_multiple_of=None,
-            return_tensors="pt",
-        )
-        # exp vs explanation inconsistency...
-        for key, val in b2.items():
-            ret_dict["{}_with_incorrect_explanation".format(key)] = val
-        for key, val in b3.items():
-            ret_dict["{}_no_exp".format(key)] = val
-        return ret_dict
-
-    return collate_fn
-
-
 def construct_collate(tokenizer):
     def collate_fn(feature_list):
         # process
@@ -86,14 +40,14 @@ def construct_collate(tokenizer):
             for ex in feature_list
         ]
         b1 = tokenizer.pad(
-            process_fn("without_explanation"),
+            process_fn("without_patch"),
             padding=True,
             max_length=None,
             pad_to_multiple_of=None,
             return_tensors="pt",
         )
         b2 = tokenizer.pad(
-            process_fn("with_explanation"),
+            process_fn("with_patch"),
             padding=True,
             max_length=None,
             pad_to_multiple_of=None,
@@ -101,14 +55,14 @@ def construct_collate(tokenizer):
         )
         ret_dict = {}
         for key, val in b1.items():
-            ret_dict["{}_without_explanation".format(key)] = val
+            ret_dict["{}_without_patch".format(key)] = val
         for key, val in b2.items():
-            ret_dict["{}_with_explanation".format(key)] = val
+            ret_dict["{}_with_patch".format(key)] = val
         labels = torch.tensor([ex["labels"] for ex in feature_list])
-        exp_applies = torch.tensor([ex["exp_applies"] for ex in feature_list])
+        patch_applies = torch.tensor([ex["patch_applies"] for ex in feature_list])
         is_gold = torch.tensor([ex["gold"] for ex in feature_list])
         ret_dict["labels"] = labels
-        ret_dict["exp_applies"] = exp_applies
+        ret_dict["patch_applies"] = patch_applies
         ret_dict["is_gold"] = is_gold
         return ret_dict
 
@@ -167,8 +121,8 @@ def eval_func(cfg, model, val_data_dict, collator, log, best_metric=None, metric
                 collate_fn=collator,
             )
 
-            if key == "exp_grounding_data":
-                result = model.evaluator(validation, mode="exp_applies_predictor")
+            if key == "patch_grounding_data":
+                result = model.evaluator(validation, mode="patch_applies_predictor")
             else:
                 result = model.evaluator(validation)
             to_log["{}_f1".format(key)] = result["f1"]

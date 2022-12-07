@@ -1,4 +1,4 @@
-# ==== Functions for generating data for evaluating knowledge explanations =====
+# ==== Functions for generating data for evaluating knowledge patches =====
 from collections import defaultdict as ddict
 import json
 from helpers import prompt_styles
@@ -271,20 +271,20 @@ def subset(metadata, idxs):
     return metadata_subset
 
 
-def deconstruct(explanation_and_instance_list):
-    explanations = []
+def deconstruct(patch_and_instance_list):
+    patches = []
     instances = []
-    for eandi in explanation_and_instance_list:
+    for eandi in patch_and_instance_list:
         if len(eandi.split(".")) > 1:
-            explanation = eandi.split(".")[0].split(":")[-1].strip()
+            patch = eandi.split(".")[0].split(":")[-1].strip()
             instance = eandi.split(".")[1].split(":")[-1].strip()
         else:
             instance = eandi.split(":")[-1].strip()
-            explanation = ""
-        explanations.append(explanation)
+            patch = ""
+        patches.append(patch)
         instances.append(instance)
 
-    return instances, explanations
+    return instances, patches
 
 
 def get_metadata(all_data, all_labels):
@@ -292,14 +292,14 @@ def get_metadata(all_data, all_labels):
         label for label, template in zip(all_labels, all_data) for _ in template["data"]
     ]
     try:
-        all_instances, all_explanations = deconstruct(
+        all_instances, all_patches = deconstruct(
             [ex for template in all_data for ex in template["data"]]
         )
     except:
         all_instances = [ex for template in all_data for ex in template["data"]]
-        all_explanations = ["" for _ in all_instances]
+        all_patches = ["" for _ in all_instances]
     return {
         "instances": all_instances,
-        "explanations": all_explanations,
+        "patches": all_patches,
         "labels": labels,
     }

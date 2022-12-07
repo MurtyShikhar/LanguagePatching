@@ -15,13 +15,13 @@ import torch
 import itertools
 from helpers import convert_to_tensors, prompt_styles, verbalize_examples
 from transformers.data.data_collator import DataCollatorWithPadding
-from explanation_dataset import SimpleDataset
+from patch_dataset import SimpleDataset
 
 from training_utils import train_loop_fixed_steps
 
 
-def apply_patch_soft(exp_applies_probs, baseline_probs, conditioned_probs):
-    applies_prob = exp_applies_probs[:, 1].reshape(-1, 1)
+def apply_patch_soft(patch_applies_probs, baseline_probs, conditioned_probs):
+    applies_prob = patch_applies_probs[:, 1].reshape(-1, 1)
     return (applies_prob * conditioned_probs) + (1 - applies_prob) * baseline_probs
 
 
@@ -228,7 +228,7 @@ def predict_stuff(
     )
 
 
-def get_predictions(explanations, inputs, model_dict, prompt_style=None):
+def get_predictions(patches, inputs, model_dict, prompt_style=None):
     model2preds = {}
     for model_name in model_dict:
         preds = {}
@@ -242,12 +242,12 @@ def get_predictions(explanations, inputs, model_dict, prompt_style=None):
             else:
                 prompt_style = "p1"
 
-        for explanation in explanations:
-            if len(explanation) == 0:
+        for patch in patches:
+            if len(patch) == 0:
                 input_examples = inputs
             else:
-                input_examples = [(explanation, cinput) for cinput in inputs]
-            preds[explanation] = predict_stuff(
+                input_examples = [(patch, cinput) for cinput in inputs]
+            preds[patch] = predict_stuff(
                 input_examples, [0] * len(inputs), model_obj, prompt_style
             )
         model2preds[model_name] = preds

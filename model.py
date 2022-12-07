@@ -223,7 +223,7 @@ class T5Interpeter(nn.Module):
         for key in batch:
             batch[key] = batch[key].to(self.model.device)
         # labels are -100 unless the input_id refers to either positive or negative
-        if mode == "exp_applies_predictor":
+        if mode == "patch_applies_predictor":
             assert self.aux_decoder is not None
             out = self.model(
                 input_ids=batch["input_ids"],
@@ -284,9 +284,9 @@ class T5Interpeter(nn.Module):
         if type(batch) == dict:
             out_list = []
             for key in batch:
-                if key == "exp_grounding_data":
+                if key == "patch_grounding_data":
                     out_list.append(
-                        self.forward_helper(batch[key], mode="exp_applies_predictor")
+                        self.forward_helper(batch[key], mode="patch_applies_predictor")
                     )
                 else:
                     out_list.append(

@@ -148,8 +148,8 @@ def get_yelp_stars():
     examples, labels, _ = get_all_yelp_data()
     idxs = [idx for idx, ex in enumerate(examples) if re.search(r"\bstars?\b", ex)]
 
-    explanations = [
+    patches = [
         "If review gives more than 3 stars, then sentiment is positive and if review gives less than 3 stars then sentiment is negative",
         "",
     ]
-    return [examples[idx] for idx in idxs], [labels[idx] for idx in idxs], explanations
+    return [examples[idx] for idx in idxs], [labels[idx] for idx in idxs], patches

@@ -1,0 +1,13 @@
+ mode: 'train'
+ data: 'toy'
+ use_as: 'sentiment-classifier'
+ model_type: t5-large
+ prompt_style: 'p1'
+ train:
+     num_warmup_steps: 500
+     save_path: 'gpt2-finetuned'
+     num_epochs: 3 
+     lr: 1e-4
+     train_batch_size: 2
+     accum_steps: 16
+     eval_batch_size: 64
